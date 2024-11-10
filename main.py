@@ -205,7 +205,7 @@ def user_quest_status_check():
         user_response = capture_user_response(["yes", "no"])
         if user_response == "yes":
             xp_gained = current_user.get("assigned_quest").get("quest_xp")
-            say_text(f"Congratulations! You have earned {xp_gained} XP. Would you like another quest?")
+            say_text("Congratulations! You have earned " + str(xp_gained) + " XP. Would you like another quest?")
             current_user["assigned_quest"] = {}
             current_user["xp"] = int(current_user.get("xp")) + int(xp_gained)
             save_user_data()
@@ -215,7 +215,7 @@ def user_quest_status_check():
                 current_goal = "get_quest"
             else:
                 users_current_xp = current_user.get("xp")
-                say_text(f"Great! You now have {users_current_xp} XP. Good luck on your adventures!")
+                say_text("Great! You now have " + str(users_current_xp) + " XP. Good luck on your adventures!")
         else:
             say_text("Okay.")
 
@@ -232,7 +232,7 @@ def log_in_user():
             if user.get("name", "").lower() in name_input.lower():
                 # If a match is found, this could set the current user
                 current_user = user
-                say_text(f"User {current_user['name']} is now logged in.")
+                say_text("User " + str(current_user['name']) + " is now logged in.")
                 user_found = True
                 break
 
@@ -258,7 +258,7 @@ def log_in_user():
                 }
                 user_data["users"].append(new_user)
                 current_user = new_user
-                say_text(f"User {new_user['name']} has been created and logged in.")
+                say_text("User " + str(new_user['name']) + " has been created and logged in.")
                 save_user_data()
                 break
 
@@ -287,7 +287,7 @@ def main():
         ]))
         
         # Confirm that the user has not changed
-        say_text("Are you " + str(current_user["name"] + "?"))
+        say_text("Are you " + str(current_user["name"]) + "?")
         user_response = capture_user_response(["yes", "no"])
 
         # Assist the user in logging in
@@ -465,7 +465,7 @@ def main():
                 # Update the user's XP and quest
                 if user_response == "yes":
                     xp_gained = current_user.get("assigned_quest").get("quest_xp")
-                    say_text(f"Congratulations! You have earned {xp_gained} XP. Would you like another quest?")
+                    say_text("Congratulations! You have earned " + str(xp_gained) + " XP. Would you like another quest?")
                     current_user["assigned_quest"] = {}
                     current_user["xp"] = int(current_user.get("xp")) + int(xp_gained)
                     save_user_data()
@@ -476,7 +476,7 @@ def main():
                         current_goal = "get_quest"
                     else:
                         users_current_xp = current_user.get("xp")
-                        say_text(f"Great! You now have {users_current_xp} XP. Good luck on your adventures!")
+                        say_text("Great! You now have " + str(users_current_xp) + " XP. Good luck on your adventures!")
                 else:
                     say_text("Keep at it! You're almost there.")
 
