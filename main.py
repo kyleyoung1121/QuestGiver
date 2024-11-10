@@ -1,25 +1,19 @@
 import random
+import datetime
 import json
 import re
 
 # Text to speech
-import pyttsx3
 from gtts import gTTS
-from pydub import AudioSegment
 from io import BytesIO
 from pygame import mixer  # Use pygame to play in-memory audio
 mixer.init()
-text_to_speech = pyttsx3.init()
-voices = text_to_speech.getProperty('voices')
-text_to_speech.setProperty('voice', voices[0].id)
-previous_message = ""
 
 # Speech recognition
-
 import requests
 import speech_recognition as sr
 speech_recognizer = sr.Recognizer()
-speech_recognizer.energy_threshold = 200  # Adjust based on your environment
+speech_recognizer.energy_threshold = 100  # Adjust based on your environment
 speech_recognizer.pause_threshold = 0.8   # Pause duration before stopping
 speech_recognizer.dynamic_energy_threshold = True  # Adjusts based on ambient noise
 from io import BytesIO
@@ -113,10 +107,7 @@ def convert_voice_to_text(audio):
         return ""
 
 
-
 def transcribe_audio_with_wit(audio):
-    """Transcribes audio to text using Wit.ai and returns the final understanding text."""
-
     # Get the audio data (assuming `audio` has a `get_wav_data()` method)
     audio_data = audio.get_wav_data()
 
@@ -139,15 +130,11 @@ def transcribe_audio_with_wit(audio):
         # Find all matches of the pattern (this looks for every "text" field in the response)
         matches = re.findall(pattern, response.text)
 
-        print(f"Matches found: {matches}")  # Debug the list of matches
-
         if matches:
             # The last match is the final understanding text
             final_text = matches[-1]
-            print("Final Text Found:", final_text)
             return final_text
         else:
-            print("No 'text' entries found in the response.")
             return ""
 
     except requests.RequestException as e:
@@ -160,24 +147,18 @@ def say_text(text):
 
     # Convert text to speech and save to memory
     tts = gTTS(text=text, lang='en', tld='co.za', slow=False)
+
     audio_data = BytesIO()
     tts.write_to_fp(audio_data)
     audio_data.seek(0)
-    
-    # Load audio into pydub and shift pitch
-    audio = AudioSegment.from_file(audio_data, format="mp3")
-    
-    
-    # Save shifted audio to BytesIO and play with pygame
-    temp_audio = BytesIO()
-    audio.export(temp_audio, format="mp3")
-    temp_audio.seek(0)
-    mixer.music.load(temp_audio, 'mp3')
+
+    # Load the audio into pygame and play
+    mixer.music.load(audio_data, 'mp3')
     mixer.music.play()
-    
+
     # Wait until playback is done
     while mixer.music.get_busy():
-        pass
+        pass  # Wait until the audio finishes playing
 
 
 def capture_user_response(options = None):
@@ -190,10 +171,18 @@ def capture_user_response(options = None):
         if text:
             # If this function is called with options, those are the only valid responses
             if options:
-                # If the user says one of the valid options, return the corresponding option
-                for option in options:
-                    if option.lower() in text:
-                        return option.lower()
+                # Special case: yes/no. Expanded to allow common responses
+                if "yes" in options and "no" in options:
+                    if any(word in text for word in ["yes", "yeah", "yep", "sure", "okay", "definitely"]):
+                        return "yes"
+                    if any(word in text for word in ["no", "nah", "nope", "negative", "don't"]):
+                        return "no"
+                    
+                else:
+                    # If the user says one of the valid options, return the corresponding option
+                    for option in options:
+                        if option.lower() in text:
+                            return option.lower()
                 # If the user's input doesn't match the valid options, let them know
                 valid_options = ""
                 for option in options:
@@ -279,7 +268,6 @@ def main():
     load_user_data()
     sleeping = False
     end_program = False
-    text = ""
     global current_user
     global current_goal
 
@@ -321,16 +309,29 @@ def main():
                 if any(word in user_command.lower() for word in ["change", "switch"]):
                     if any(word in user_command.lower() for word in ["user", "account", "profile"]):
                         current_goal = "change_user"
+                        break
                 
-                elif any(word in user_command.lower() for word in ["add"]):
+                if any(word in user_command.lower() for word in ["add"]):
                     if any(word in user_command.lower() for word in ["quest", "adventure", "test", "quiz"]): # test and quiz sound like quest
                         current_goal = "add_quest"
+                        break
                 
-                elif any(word in user_command.lower() for word in ["get", "give"]):
+                if any(word in user_command.lower() for word in ["get", "give"]):
                     if any(word in user_command.lower() for word in ["quest", "adventure", "test", "quiz"]): # test and quiz sound like quest
                         current_goal = "get_quest"
+                        break
                 
-                elif any(word in user_command.lower() for word in ["help"]):
+                if any(word in user_command.lower() for word in ["remove", "delete", "reroll"]):
+                    if any(word in user_command.lower() for word in ["quest", "adventure", "test", "quiz"]): # test and quiz sound like quest
+                        current_goal = "remove_quest"
+                        break
+                
+                if any(word in user_command.lower() for word in ["complete", "finish", "submit", "turn in", "done"]):
+                    if any(word in user_command.lower() for word in ["quest", "adventure", "test", "quiz"]): # test and quiz sound like quest
+                        current_goal = "complete_quest"
+                        break
+                
+                if any(word in user_command.lower() for word in ["help"]):
                     say_text("You can say the following commands: Change user... Add quest... Get quest...")
 
             # Change user
@@ -409,26 +410,77 @@ def main():
                 say_text("I have just the thing!")
                 say_text("Your new quest is: " + selected_quest["quest_text"])
                 say_text("Complete this quest, and I will award you with " + str(selected_quest['quest_xp']) +" XP!")
-                say_text("Are you up for the challenge?")
+                
+                # Check if this user has already abandoned a quest today
+                last_reroll = current_user.get("last_reroll_date", "")
+                if last_reroll == "" or not (last_reroll == datetime.date.today()):
+                    
+                    say_text("Are you up for the challenge?")
+                    user_response = capture_user_response(["yes", "no"])
+                    if user_response == "yes":
+                        say_text("I knew you were the right person for this challenge! Good luck!")
+                        current_user["assigned_quest"] = selected_quest
+                        save_user_data()
+                    else:
+                        say_text("As you wish. I will grant you one quest reroll.")
+                        while True:
+                            selected_quest = random.choice(quest_pool)
+                            if selected_quest["quest_scope"] == "everyone" or selected_quest["quest_scope"] == current_user["name"]:
+                                break
+                        say_text("Your new quest is: " + selected_quest["quest_text"])
+                        say_text("Complete this quest, and I will award you with " + str(selected_quest['quest_xp']) +" XP!")
+                        current_user["assigned_quest"] = selected_quest
+                        current_user["last_reroll_date"] = datetime.date.today()
+                        save_user_data()
 
-                user_response = capture_user_response(["yes", "no"])
-                if user_response == "yes":
-                    say_text("I knew you were the right person for this challenge! Good luck!")
-                    current_user["assigned_quest"] = selected_quest
-                    save_user_data()
+                # If the user already has abandoned a quest, they are stuck with this one. No rerolls!
                 else:
-                    say_text("As you wish. I will grant you one quest reroll.")
-                    while True:
-                        selected_quest = random.choice(quest_pool)
-                        if selected_quest["quest_scope"] == "everyone" or selected_quest["quest_scope"] == current_user["name"]:
-                            break
-                    say_text("Your new quest is: " + selected_quest["quest_text"])
-                    say_text("Complete this quest, and I will award you with " + str(selected_quest['quest_xp']) +" XP!")
                     current_user["assigned_quest"] = selected_quest
                     save_user_data()
 
                 current_goal = None
+
+            elif current_goal == "remove_quest":
+                # Check if this user has already abandoned a quest today
+                last_reroll = current_user.get("last_reroll_date", "")
+                if last_reroll == "" or not (last_reroll == datetime.date.today()):
+                    # Verify the user's intentions
+                    say_text("Are you sure you want to give up?")
+                    user_response = capture_user_response(["yes", "no"])
+                    # Remove this user's quest
+                    if user_response == "yes":
+                        current_user["assigned_quest"] = {} 
+                        current_user["last_reroll_date"] = datetime.date.today()
+                        say_text("Quest removed! Would you like a new quest?")
+                        user_response = capture_user_response(["yes", "no"])
+                        if user_response == "yes":
+                            current_goal == "get_quest"
+                    else:
+                        say_text("Excellent! Operation cancelled.")
                 
+            elif current_goal == "complete_quest":
+                # Verify the user's intentions
+                say_text("Are you sure you have fully completed the quest?")
+                user_response = capture_user_response(["yes", "no"])
+                # Update the user's XP and quest
+                if user_response == "yes":
+                    xp_gained = current_user.get("assigned_quest").get("quest_xp")
+                    say_text(f"Congratulations! You have earned {xp_gained} XP. Would you like another quest?")
+                    current_user["assigned_quest"] = {}
+                    current_user["xp"] = int(current_user.get("xp")) + int(xp_gained)
+                    save_user_data()
+                    
+                    # If they want another quest, mark them down as so
+                    user_response = capture_user_response(["yes", "no"])
+                    if user_response == "yes":
+                        current_goal = "get_quest"
+                    else:
+                        users_current_xp = current_user.get("xp")
+                        say_text(f"Great! You now have {users_current_xp} XP. Good luck on your adventures!")
+                else:
+                    say_text("Keep at it! You're almost there.")
+
+
                 
 if __name__ == "__main__":
     main()

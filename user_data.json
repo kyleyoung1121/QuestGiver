@@ -1,30 +1,24 @@
 {
     "users": [
         {
-            "name": "Kyle",
+            "name": "Jill",
             "assigned_quest": {
-                "quest_text": "Light a candle",
-                "quest_xp": 50,
+                "quest_text": "Something fun",
+                "quest_xp": 400,
                 "quest_scope": "everyone"
             },
-            "xp": 800,
-            "streak_count": 0
+            "xp": 850,
+            "last_reroll_date": ""
         },
         {
-            "name": "Alice",
+            "name": "Bob",
             "assigned_quest": {
                 "quest_text": "Put on comfy clothes",
                 "quest_xp": 50,
                 "quest_scope": "everyone"
             },
             "xp": 0,
-            "streak_count": 2
-        },
-        {
-            "name": "sam",
-            "assigned_quest": {},
-            "xp": 0,
-            "streak_count": 0
+            "last_reroll_date": ""
         }
     ]
 }

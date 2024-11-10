@@ -24,19 +24,14 @@
             {
                 "quest_text": "water plants",
                 "quest_xp": 100,
-                "quest_scope": "Kyle"
+                "quest_scope": "Jill"
             }
         ],
         "adventure": [
             {
-                "quest_text": "Go to the store",
-                "quest_xp": 400,
-                "quest_scope": "everyone"
-            },
-            {
                 "quest_text": "Take a walk outside!",
                 "quest_xp": 200,
-                "quest_scope": "everyone"
+                "quest_scope": "Bob"
             },
             {
                 "quest_text": "Try a new restaurant for dinner.",
