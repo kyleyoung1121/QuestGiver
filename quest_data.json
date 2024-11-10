@@ -1,6 +1,6 @@
 {
     "quest_categories": {
-        "chores": [
+        "chore": [
             {
                 "quest_text": "Do your laundry",
                 "quest_xp": 800,

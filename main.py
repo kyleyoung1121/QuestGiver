@@ -1,5 +1,6 @@
 import random
 import json
+import re
 
 # Text to speech
 import pyttsx3
@@ -10,12 +11,21 @@ from pygame import mixer  # Use pygame to play in-memory audio
 mixer.init()
 text_to_speech = pyttsx3.init()
 voices = text_to_speech.getProperty('voices')
-text_to_speech.setProperty('voice', voices[1].id)
+text_to_speech.setProperty('voice', voices[0].id)
 previous_message = ""
 
 # Speech recognition
+
+import requests
 import speech_recognition as sr
 speech_recognizer = sr.Recognizer()
+speech_recognizer.energy_threshold = 200  # Adjust based on your environment
+speech_recognizer.pause_threshold = 0.8   # Pause duration before stopping
+speech_recognizer.dynamic_energy_threshold = True  # Adjusts based on ambient noise
+from io import BytesIO
+# Wit.ai API token
+WIT_API_TOKEN = "RQ7MPEPYNHUQRUVHYRYJZ34QV7WMK3ZT"
+
 
 quest_data = {}
 user_data = {}
@@ -70,47 +80,97 @@ def save_user_data(filename="user_data.json"):
 
 def capture_voice_input():
     with sr.Microphone() as source:
-        audio = speech_recognizer.listen(source)
+        print("Bot is listening...")
+
+        # Optional: add a beep sound here to indicate listening status
+        # Add ambient noise calibration if background noise fluctuates
+        speech_recognizer.adjust_for_ambient_noise(source, duration=0.5)
+
+        try:
+            audio = speech_recognizer.listen(source, timeout=10, phrase_time_limit=14)
+        except sr.WaitTimeoutError:
+            print("Listening timed out while waiting for input.")
+            return None
+
     return audio
 
 
 def convert_voice_to_text(audio):
+    if audio is None:
+        return ""  # No audio captured, return empty string
+
     try:
         text = speech_recognizer.recognize_google(audio)
         print("You said: " + text)
+        return text
+
     except sr.UnknownValueError:
-        text = ""
+        print("Bot could not understand audio.")
+        return ""  # Return empty string if speech not understood
+
     except sr.RequestError as e:
-        text = ""
-        print("Error; {0}".format(e))
-    return text
+        print(f"Request error from Google Speech Recognition service; {e}")
+        return ""
 
 
-# def say_text(input_text):
-#     # Optional: Print out the text to the terminal as well
-#     print(input_text)
-#     text_to_speech.say(input_text)
-#     text_to_speech.runAndWait()
-#     global previous_message 
-#     previous_message = input_text
+
+def transcribe_audio_with_wit(audio):
+    """Transcribes audio to text using Wit.ai and returns the final understanding text."""
+
+    # Get the audio data (assuming `audio` has a `get_wav_data()` method)
+    audio_data = audio.get_wav_data()
+
+    headers = {
+        'Authorization': f'Bearer {WIT_API_TOKEN}',  # Make sure WIT_API_TOKEN is defined
+        'Content-Type': 'audio/wav'
+    }
+
+    try:
+        # Send POST request to Wit.ai API
+        response = requests.post(
+            'https://api.wit.ai/speech',
+            headers=headers,
+            data=audio_data
+        )
+
+        # Use a simple regex to capture all occurrences of the "text" field
+        pattern = r'"text"\s*:\s*"([^"]+)"'
+
+        # Find all matches of the pattern (this looks for every "text" field in the response)
+        matches = re.findall(pattern, response.text)
+
+        print(f"Matches found: {matches}")  # Debug the list of matches
+
+        if matches:
+            # The last match is the final understanding text
+            final_text = matches[-1]
+            print("Final Text Found:", final_text)
+            return final_text
+        else:
+            print("No 'text' entries found in the response.")
+            return ""
+
+    except requests.RequestException as e:
+        print("Error during API request:", e)
+        return ""
 
 
-def say_text(text, pitch_shift=-4):
+def say_text(text):
+    print(text)
+
     # Convert text to speech and save to memory
-    tts = gTTS(text=text, lang='en', slow=False)
+    tts = gTTS(text=text, lang='en', tld='co.za', slow=False)
     audio_data = BytesIO()
     tts.write_to_fp(audio_data)
     audio_data.seek(0)
     
     # Load audio into pydub and shift pitch
     audio = AudioSegment.from_file(audio_data, format="mp3")
-    shifted_audio = audio._spawn(audio.raw_data, overrides={
-        "frame_rate": int(audio.frame_rate * (2.0 ** (pitch_shift / 12)))
-    }).set_frame_rate(audio.frame_rate)
+    
     
     # Save shifted audio to BytesIO and play with pygame
     temp_audio = BytesIO()
-    shifted_audio.export(temp_audio, format="mp3")
+    audio.export(temp_audio, format="mp3")
     temp_audio.seek(0)
     mixer.music.load(temp_audio, 'mp3')
     mixer.music.play()
@@ -124,7 +184,7 @@ def capture_user_response(options = None):
     while True:
         # Start listening
         captured_audio = capture_voice_input()
-        text = convert_voice_to_text(captured_audio).lower()
+        text = transcribe_audio_with_wit(captured_audio).lower()
 
         # Only continue if text is heard
         if text:
@@ -326,8 +386,8 @@ def main():
                     "quest_scope": quest_scope
                 }
                 
-                say_text("Nice! ... What category does your quest have? chores, adventure, wellness, or party?")
-                quest_category = capture_user_response(["chores", "adventure", "wellness", "party"])
+                say_text("Nice! ... What category does your quest have? chore, adventure, wellness, or party?")
+                quest_category = capture_user_response(["chore", "adventure", "wellness", "party"])
                 
                 say_text("Adding a " + quest_challenge + " quest for " + str(quest_xp) + " XP.")
 
@@ -337,8 +397,8 @@ def main():
                 current_goal = None
 
             elif current_goal == "get_quest":
-                say_text("Excellent! ... What category of quest do you want? chores, adventure, wellness, or party?")
-                quest_category = capture_user_response(["chores", "adventure", "wellness", "party"])
+                say_text("Excellent! ... What category of quest do you want? chore, adventure, wellness, or party?")
+                quest_category = capture_user_response(["chore", "adventure", "wellness", "party"])
                 
                 quest_pool = quest_data.get("quest_categories")[quest_category]
                 while True:
