@@ -1,0 +1,16 @@
+{
+    "users": [
+        {
+            "name": "Kyle",
+            "assigned_quest": "Wash your sheets",
+            "xp": 1200,
+            "streak_count": 0
+        },
+        {
+            "name": "Alice",
+            "assigned_quest": "Call a family member",
+            "xp": 850,
+            "streak_count": 2
+        }
+    ]
+}
