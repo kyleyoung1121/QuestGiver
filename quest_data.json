@@ -20,6 +20,11 @@
                 "quest_text": "clean my car",
                 "quest_xp": 400,
                 "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "water plants",
+                "quest_xp": 100,
+                "quest_scope": "Kyle"
             }
         ],
         "adventure": [
