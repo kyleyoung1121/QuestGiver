@@ -361,18 +361,19 @@ def main():
                     if user_response == "yes":
                         break
 
-                quest_xp = 50 # default
-                match quest_challenge:
-                    case "trivial":
-                        quest_xp = 50
-                    case "easy":
-                        quest_xp = 100
-                    case "medium":
-                        quest_xp = 200
-                    case "hard":
-                        quest_xp = 400
-                    case "extreme":
-                        quest_xp = 800
+                if quest_challenge == "trivial":
+                    quest_xp = 50
+                elif quest_challenge == "easy":
+                    quest_xp = 100
+                elif quest_challenge == "medium":
+                    quest_xp = 200
+                elif quest_challenge == "hard":
+                    quest_xp = 400
+                elif quest_challenge == "extreme":
+                    quest_xp = 800
+                else: 
+                    quest_xp = 50 # default
+                
                 
                 say_text("Okay! ...")
                 quest_scope = current_user["name"] # default
