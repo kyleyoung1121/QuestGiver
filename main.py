@@ -52,7 +52,7 @@ def load_user_data(filename="user_data.json"):
             user_data = json.load(file)
         print("User data loaded successfully.")
     except FileNotFoundError:
-        print(f"{filename} not found. Starting with an empty user data.")
+        print(str(filename) + " not found. Starting with an empty user data.")
         user_data = {"users": []}
     
     # Check if there are users in user_data and set the first user as the default current user
@@ -103,7 +103,7 @@ def convert_voice_to_text(audio):
         return ""  # Return empty string if speech not understood
 
     except sr.RequestError as e:
-        print(f"Request error from Google Speech Recognition service; {e}")
+        print("Request error from Google Speech Recognition service; " + e)
         return ""
 
 
@@ -112,7 +112,7 @@ def transcribe_audio_with_wit(audio):
     audio_data = audio.get_wav_data()
 
     headers = {
-        'Authorization': f'Bearer {WIT_API_TOKEN}',  # Make sure WIT_API_TOKEN is defined
+        'Authorization': 'Bearer ' + WIT_API_TOKEN,  # Make sure WIT_API_TOKEN is defined
         'Content-Type': 'audio/wav'
     }
 
