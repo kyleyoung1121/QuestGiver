@@ -12,9 +12,27 @@ previous_message = ""
 import speech_recognition as sr
 speech_recognizer = sr.Recognizer()
 
-# Global variable to store user data
+quest_data = {}
 user_data = {}
 current_user = None
+
+current_goal = None
+
+
+# Function to load user data from the JSON file
+def load_quest_data(filename="quest_data.json"):
+    global quest_data
+    with open(filename, "r") as file:
+        quest_data = json.load(file)
+    print("Quest data loaded successfully.")
+        
+
+# Function to save changes back to the JSON file
+def save_quest_data(filename="quest_data.json"):
+    global quest_data
+    # Save changes back to JSON file
+    with open(filename, "w") as file:
+        json.dump(quest_data, file, indent=4)
 
 
 # Function to load user data from the JSON file
@@ -63,40 +81,11 @@ def convert_voice_to_text(audio):
     return text
 
 
-def start_quest():
-    say_text(random.choice([
-        "Welcome! I have quite the quest for you...",
-        "You seek a quest? Very well.",
-        "Are you up for a challenge?",
-    ]))
-
-    say_text("Your quest is to call a family member you haven't heard from in a while")
-
-
-
-
-def process_voice_command(text):
-    if any(word in text.lower() for word in ["quest", "quiz", "adventure"]): # Note: quiz included to fix common mishearing
-        start_quest()
-    
-    elif "repeat" in text.lower():
-        say_text("Sure. " + previous_message)
-
-    elif "goodbye" in text.lower():
-        say_text("Goodbye! Have a great day!")
-        return True
-
-    else:
-        if not text == "":
-            say_text("Say again?")
-    return False
-
-
 def say_text(input_text):
-    text_to_speech.say(input_text)
-    text_to_speech.runAndWait()
     # Optional: Print out the text to the terminal as well
     print(input_text)
+    text_to_speech.say(input_text)
+    text_to_speech.runAndWait()
     global previous_message 
     previous_message = input_text
 
@@ -129,6 +118,7 @@ def capture_user_response(options = None):
 
 
 def log_in_user():
+    global current_user
     while True:
         say_text("Please say your name")
         name_input = capture_user_response()
@@ -159,7 +149,7 @@ def log_in_user():
                 # Append the new user to user_data and set as current user
                 new_user = {
                     "name": name_input,
-                    "assigned_quest": "",
+                    "assigned_quest": {},
                     "xp": 0,
                     "streak_count": 0
                 }
@@ -170,11 +160,13 @@ def log_in_user():
                 break
 
 def main():
+    load_quest_data()
     load_user_data()
     sleeping = False
     end_program = False
     text = ""
     global current_user
+    global current_goal
 
     while not end_program:
 
@@ -198,22 +190,27 @@ def main():
         # Assist the user in logging in
         if user_response == "no":
             log_in_user()
-        
+
         say_text("Hello " + current_user["name"] + "!")
 
         # Check if this user has an ongoing quest
-        if current_user.get("assigned_quest", ""):
-            say_text("Have you completed your quest? : ")
-            say_text(current_user.get("assigned_quest"))
+        if current_user.get("assigned_quest", None):
+            say_text("Have you completed your quest?")
+            say_text(current_user.get("assigned_quest").get("quest_text"))
             user_response = capture_user_response(["yes", "no"])
             if user_response == "yes":
-                say_text("Congratulations! You have earned 50 XP. Would you like another quest?")
+                xp_gained = current_user.get("assigned_quest").get("quest_xp")
+                say_text(f"Congratulations! You have earned {xp_gained} XP. Would you like another quest?")
+                current_user["assigned_quest"] = {}
+                current_user["xp"] = current_user.get("xp") + xp_gained
+                save_user_data()
+                
                 user_response = capture_user_response(["yes", "no"])
                 if user_response == "yes":
                     current_goal = "get_quest"
                 else:
-                    say_text("Great! You're 450 XP from level 3. Good luck on your adventures! Goodbye!")
-                    current_goal = "sleep"
+                    users_current_xp = current_user.get("xp")
+                    say_text(f"Great! You now have {users_current_xp} XP. Good luck on your adventures!")
             else:
                 say_text("Okay.")
 
@@ -244,6 +241,7 @@ def main():
             # Change user
             if current_goal == "change_user":
                 log_in_user()
+                current_goal = None
 
             elif current_goal == "add_quest":
                 quest_description = ""
@@ -279,12 +277,33 @@ def main():
                     case "extreme":
                         quest_xp = 800
                 
-                say_text("Adding a " + quest_challenge + " quest for " + str(quest_xp) + " XP.")
-                        
+                say_text("Okay! ...")
+                quest_scope = current_user["name"] # default
+                say_text("Surely, this quest applies to you. But does it also apply to all users?")
+                user_response = capture_user_response(["yes", "no"])
+                if user_response == "yes":
+                    quest_scope = "everyone"
                 
+                new_quest = {
+                    "quest_text": quest_description,
+                    "quest_xp": quest_xp,
+                    "quest_scope": quest_scope
+                }
+                
+                say_text("Nice! ... What category does your quest have? chores, adventure, wellness, or party?")
+                quest_category = capture_user_response(["chores", "adventure", "wellness", "party"])
+                
+                say_text("Adding a " + quest_challenge + " quest for " + str(quest_xp) + " XP.")
 
-                    
+                quest_data.get("quest_categories")[quest_category].append(new_quest)
+                save_quest_data()
 
+                current_goal = None
+
+            elif current_goal == "get_quest":
+                say_text("You want a quest huh? Too bad. Not implemented yet.")
+                current_goal = None
+                
                 
 if __name__ == "__main__":
     main()

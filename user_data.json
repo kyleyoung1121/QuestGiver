@@ -2,13 +2,21 @@
     "users": [
         {
             "name": "Kyle",
-            "assigned_quest": "Wash your sheets",
-            "xp": 1200,
+            "assigned_quest": {
+                "quest_text": "Call the president",
+                "quest_xp": "9000",
+                "quest_scope": "everyone"
+            },
+            "xp": 1250,
             "streak_count": 0
         },
         {
             "name": "Alice",
-            "assigned_quest": "Call a family member",
+            "assigned_quest": {
+                "quest_text": "Call a family member",
+                "quest_xp": "200",
+                "quest_scope": "everyone"
+            },
             "xp": 850,
             "streak_count": 2
         }

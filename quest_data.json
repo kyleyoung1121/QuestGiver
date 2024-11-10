@@ -1,0 +1,77 @@
+{
+    "quest_categories": {
+        "chores": [
+            {
+                "quest_text": "Do your laundry",
+                "quest_xp": 800,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Get all dirty dishes out of your room.",
+                "quest_xp": 100,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Take out the trash.",
+                "quest_xp": 200,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "clean my car",
+                "quest_xp": 400,
+                "quest_scope": "everyone"
+            }
+        ],
+        "adventure": [
+            {
+                "quest_text": "Go to the store",
+                "quest_xp": 400,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Take a walk outside!",
+                "quest_xp": 200,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Try a new restaurant for dinner.",
+                "quest_xp": 400,
+                "quest_scope": "everyone"
+            }
+        ],
+        "wellness": [
+            {
+                "quest_text": "Light a candle",
+                "quest_xp": 50,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Put on comfy clothes",
+                "quest_xp": 50,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Take a shower",
+                "quest_xp": 200,
+                "quest_scope": "everyone"
+            }
+        ],
+        "party": [
+            {
+                "quest_text": "Something fun",
+                "quest_xp": 100,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Something fun",
+                "quest_xp": 200,
+                "quest_scope": "everyone"
+            },
+            {
+                "quest_text": "Something fun",
+                "quest_xp": 400,
+                "quest_scope": "everyone"
+            }
+        ]
+    }
+}
